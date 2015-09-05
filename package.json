@@ -1,0 +1,14 @@
+{
+  "dependencies": {},
+  "description": "Politics Test Stuff",
+  "happyFunTimes": {
+    "apiVersion": "1.14.0",
+    "category": "test",
+    "gameId": "myPolitics",
+    "gameType": "html",
+    "minPlayers": 1
+  },
+  "name": "Politics",
+  "private": true,
+  "version": "0.0.7"
+}
