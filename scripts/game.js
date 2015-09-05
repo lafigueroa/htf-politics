@@ -45,6 +45,8 @@ requirejs([
   var candidates = {};
   var numVoters = 0;
   var players = [];
+  var voters = [];
+  var candrefs = {};
   var globals = {
     itemSize: 15,
   };
@@ -83,6 +85,8 @@ requirejs([
     netPlayer.addEventListener('color', Player.prototype.setColor.bind(this));
     netPlayer.addEventListener('candidateRegister', Player.prototype.registerCandidate.bind(this));
 	netPlayer.addEventListener('voterRegister', Player.prototype.registerVoter.bind(this));
+	netPlayer.addEventListener('vote', Player.prototype.registerVote.bind(this));
+	netPlayer.addEventListener('donate', Player.prototype.registerDonation.bind(this));
 
   };
 
@@ -114,13 +118,17 @@ requirejs([
       numCandidates++;
       document.getElementById("candidatenum").innerHTML= numCandidates + " Candidate(s)"
 	  if(!candidates[cmd.name]) {
-		  candidates[cmd.name] = 0;
-		  UpdateCandidates();
+		  candidates[cmd.name] = [];
+		  candidates[cmd.name][0] = 0; // cash
+		  candidates[cmd.name][1] = 0; // votes
+		  UpdateCandidates(true);
 	  }
+	  candrefs[cmd.name]=this;
   }
 
   Player.prototype.registerVoter = function (cmd) {
       numVoters++;
+	  /*
       document.getElementById("voternum").innerHTML = numVoters + " Voter(s)"
 	  if(!candidates[cmd.name]) {
 		  candidates[cmd.name] = 1;
@@ -128,7 +136,32 @@ requirejs([
 	  else {
 		  candidates[cmd.name]++;
 	  }
+	  
 	  UpdateCandidates();
+	  */
+	  voters.push(this);
+	  var cash = Math.floor((Math.random() * 1000) + 1);
+	  if (Math.floor((Math.random() * 5) + 1) == 5)
+	  {
+		  if (Math.floor((Math.random() * 10) + 1) == 20)
+			  cash+= Math.floor((Math.random() * 10000000000) + 1);
+		  cash+=  Math.floor((Math.random() * 1000000) + 1);
+	  }
+	  this.netPlayer.sendCmd("candidates", {candidates:candidates, funds:cash});
+  }
+  
+   Player.prototype.registerDonation = function (cmd) {
+      
+	  
+	   candidates[cmd.candidate][0] +=cmd.funds;
+	  candrefs[cmd.candidate].netPlayer.sendCmd("updateFunds", {funds:cmd.funds});
+  }
+  
+   Player.prototype.registerVote = function (cmd) {
+      
+	  
+	   candidates[cmd.candidate][1] +=1;
+	   UpdateCandidates(false);
   }
 
   Player.prototype.setColor = function(cmd) {
@@ -152,18 +185,28 @@ requirejs([
   //  ctx.fill();
   };
 
-  var  UpdateCandidates = function() {
+  var  UpdateCandidates = function(addCandidate) {
 	  var container = document.getElementById("candidatesContainer");
 	  var containerHTML = "Voting Results";
 	  
 	  // for every candidate
 	  for (var candidate in candidates){
-		  containerHTML += "</br><span>"+ candidate+" has "+candidates[candidate]+" vote(s)</span>"
+		  containerHTML += "</br><span>"+ candidate+" has "+candidates[candidate][1]+" vote(s)</span>"
 	  }
 	  
 	  container.innerHTML = containerHTML;
-  
+	
+	if(addCandidate)
+	{
+		for(var i = 0; i < voters.length; i++)
+		{
+			voters[i].netPlayer.sendCmd("candidates", {candidates:candidates});
+		}
+	}
+		
   }
+  
+  
   
   var render = function() {
    // Misc.resize(canvas);
@@ -174,6 +217,16 @@ requirejs([
     drawItem(goal.position, (globals.frameCount & 4) ? "red" : "pink");
   };
   GameSupport.run(globals, render);
+  
+  setTimeout(function(){
+	  
+	  
+	  
+	  
+	  for (var i = 0 ; i < players.length; i++)
+	  players[i].netPlayer.sendCmd('voting', {candidates:candidates}) 
+  }, 30 * 1000); // actually 600
+  
 });
 
 

@@ -61,7 +61,8 @@ requirejs([
   var candidateButton = document.getElementById("candidate");
   var clientName = document.getElementById("name");
   CommonUI.setupStandardControllerUI(client, globals);
-
+	var hasVoted = false;
+	var funds = 0;
   var randInt = function(range) {
     return Math.floor(Math.random() * range);
   };
@@ -101,6 +102,7 @@ requirejs([
 	 })
 	voterButton.style.display="none";
 	candidateButton.style.display="none";
+	clientName.style.display = "none";
   });
   
   candidateButton.addEventListener('click', function(event) {
@@ -109,6 +111,10 @@ requirejs([
 	 }) 
 	voterButton.style.display="none";
 	candidateButton.style.display="none";
+	clientName.style.display = "none";
+	
+	var fundsbox = document.getElementById("funds");
+	  fundsbox.innerHTML = "This is eventually where your current Campaign funds will go!"
   });
 
   // Update our score when the game tells us.
@@ -116,5 +122,84 @@ requirejs([
     score += cmd.points;
     statusElem.innerHTML = "You scored: " + cmd.points + " total: " + score;
   });
+  client.addEventListener('candidates', function(cmd) {
+	  if(!hasVoted) {
+		  
+	   var container = document.getElementById("candidatesContainer");
+	   container.style.display = "block";
+	  var containerHTML = "Candidates On Ballot";
+	  
+	  // for every candidate
+	  for (var candidate in cmd.candidates){
+		  containerHTML += "</br><input class=\"candidate\" type = \"button\" value =\""+ candidate+"\"  >"
+	  }
+	  
+	  container.innerHTML = containerHTML;
+	  if(cmd["funds"])
+	  var fundsbox = document.getElementById("funds");
+	  fundsbox.innerHTML = "You have $" + cmd.funds + " cash! You'll donate it to the candidate you select now"
+	  var buttons = document.querySelectorAll("input.candidate");
+	  funds = cmd.funds;
+	  for (var i = 0; i < buttons.length; i++)
+	  {
+		  buttons[i].addEventListener('click', donate.bind(this, buttons[i]));
+	  }
+	  }
+  })
+  
+  function donate(choice)
+  {
+	    hasVoted = true;
+	  var container = document.getElementById("candidatesContainer");
+	   container.style.display = "none";
+	  client.sendCmd('donate', {candidate:choice.value, funds:funds});
+  }
+  
+  function vote(choice)
+  {
+	  
+	  hasVoted = true;
+	  var container = document.getElementById("candidatesContainer");
+	   container.style.display = "none";
+	  client.sendCmd('vote', {candidate:choice.value});
+  }
+  
+  //It's time to vote. Pop the stuff back up if it's beengone and put the candidates
+  client.addEventListener('voting', function(cmd) {
+	  //NOTE - everyone votes, including candidates
+	  var fundsbox = document.getElementById("funds");
+	  fundsbox.innerHTML = "It's Voting Time. Select your choice of Candidate."
+	  var container = document.getElementById("candidatesContainer");
+	   container.style.display = "block";
+	  var containerHTML = "Candidates On Ballot";
+	  var candidateList = [];
+	   for (var candidate in cmd.candidates){
+		   candidateList.push([candidate, cmd.candidates[candidate][0], cmd.candidates[candidate][1]])
+	   }
+	  //sort a list of candidates by money
+	  var candidateList = candidateList.sort(function(a,b){if (a[1] < b[1]) {return -1;} else { return 1;} });
+	  // for every candidate
+	  for (var i = 0; i < candidateList.length; i++){
+		  containerHTML += "</br><input class=\"candidate\" type = \"button\" value =\""+ candidateList[i][0]+"\" height=\""+candidateList[i][1]+"px\" width=\""+candidateList[i][1]+"px\"  >"
+	  }
+	  
+	  container.innerHTML = containerHTML;
+	  
+	   var buttons = document.querySelectorAll("input.candidate");
+	  funds = cmd.funds;
+	  for (var i = 0; i < buttons.length; i++)
+	  {
+		  buttons[i].addEventListener('click', vote.bind(this, buttons[i]));
+	  }
+	  
+	  
+  });
+  
+  client.addEventListener('updateFunds', function(cmd){
+	  var fundsbox = document.getElementById("funds");
+	  funds += cmd.funds;
+	  fundsbox.innerHTML = "Your campaign now has $"+funds+" work of campaign funds.";
+  })
+  
 });
 
