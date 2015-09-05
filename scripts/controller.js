@@ -54,8 +54,8 @@ requirejs([
 
   var score = 0;
   var statusElem = document.getElementById("gamestatus");
-  var inputElem = document.getElementById("inputarea");
-  var colorElem = document.getElementById("display");
+ // var inputElem = document.getElementById("inputarea");
+ // var colorElem = document.getElementById("display");
   var client = new GameClient();
   var voterButton = document.getElementById("voter");
   var candidateButton = document.getElementById("candidate");
@@ -86,29 +86,29 @@ requirejs([
   client.sendCmd('color', {
     color: color,
   });
-  colorElem.style.backgroundColor = color;
+ // colorElem.style.backgroundColor = color;
 
   // Send a message to the game when the screen is touched
-  inputElem.addEventListener('pointermove', function(event) {
+  /*inputElem.addEventListener('pointermove', function(event) {
     var position = Input.getRelativeCoordinates(event.target, event);
     sendMoveCmd(position, event.target);
     event.preventDefault();
-  });
+  });*/
   
   voterButton.addEventListener('click', function(event) {
 	 client.sendCmd('voterRegister', {
 		 name:clientName.value
 	 })
-	voterButton.style="display:none";
-	candidateButton.style="display:none";
+	voterButton.style.display="none";
+	candidateButton.style.display="none";
   });
   
   candidateButton.addEventListener('click', function(event) {
 	 client.sendCmd('candidateRegister', {
 		 name:clientName.value
 	 }) 
-	 voterButton.style="display:none";
-	candidateButton.style="display:none";
+	voterButton.style.display="none";
+	candidateButton.style.display="none";
   });
 
   // Update our score when the game tells us.

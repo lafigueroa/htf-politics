@@ -40,9 +40,9 @@ requirejs([
     'hft/misc/misc',
   ], function(GameServer, GameSupport, Misc) {
   var statusElem = document.getElementById("status");
-  var canvas = document.getElementById("playfield");
-  var ctx = canvas.getContext("2d");
+ 
   var numCandidates = 0;
+  var candidates = {};
   var numVoters = 0;
   var players = [];
   var globals = {
@@ -50,12 +50,12 @@ requirejs([
   };
   Misc.applyUrlSettings(globals);
 
-  var pickRandomPosition = function() {
+/*  var pickRandomPosition = function() {
     return {
       x: 30 + Misc.randInt(canvas.width  - 60),
       y: 30 + Misc.randInt(canvas.height - 60),
     };
-  };
+  };*/
 
   var Goal = function() {
       this.pickGoal();
@@ -63,7 +63,7 @@ requirejs([
   };
 
   Goal.prototype.pickGoal = function() {
-    this.position = pickRandomPosition();
+    //this.position = pickRandomPosition();
   };
 
   Goal.prototype.hit = function(otherPosition) {
@@ -75,13 +75,14 @@ requirejs([
   var Player = function(netPlayer, name) {
     this.netPlayer = netPlayer;
     this.name = name;
-    this.position = pickRandomPosition();
+    //this.position = pickRandomPosition();
     this.color = "green";
 
     netPlayer.addEventListener('disconnect', Player.prototype.disconnect.bind(this));
     netPlayer.addEventListener('move', Player.prototype.movePlayer.bind(this));
     netPlayer.addEventListener('color', Player.prototype.setColor.bind(this));
-    netPlayer.addEventListenr('candidateRegister', Player.prototype.registerCandidate.bind(this));
+    netPlayer.addEventListener('candidateRegister', Player.prototype.registerCandidate.bind(this));
+	netPlayer.addEventListener('voterRegister', Player.prototype.registerVoter.bind(this));
 
   };
 
@@ -97,8 +98,8 @@ requirejs([
   };
 
   Player.prototype.movePlayer = function(cmd) {
-    this.position.x = Math.floor(cmd.x * canvas.clientWidth);
-    this.position.y = Math.floor(cmd.y * canvas.clientHeight);
+   /* this.position.x = Math.floor(cmd.x * canvas.clientWidth);
+    this.position.y = Math.floor(cmd.y * canvas.clientHeight);*/
     if (goal.hit(this.position)) {
       // This will generate a 'scored' event on the client (player's smartphone)
       // that corresponds to this player.
@@ -112,11 +113,22 @@ requirejs([
   Player.prototype.registerCandidate = function (cmd) {
       numCandidates++;
       document.getElementById("candidatenum").innerHTML= numCandidates + " Candidate(s)"
+	  if(!candidates[cmd.name]) {
+		  candidates[cmd.name] = 0;
+		  UpdateCandidates();
+	  }
   }
 
   Player.prototype.registerVoter = function (cmd) {
       numVoters++;
       document.getElementById("voternum").innerHTML = numVoters + " Voter(s)"
+	  if(!candidates[cmd.name]) {
+		  candidates[cmd.name] = 1;
+	  }
+	  else {
+		  candidates[cmd.name]++;
+	  }
+	  UpdateCandidates();
   }
 
   Player.prototype.setColor = function(cmd) {
@@ -134,15 +146,28 @@ requirejs([
   });
 
   var drawItem = function(position, color) {
-    ctx.fillStyle = color;
-    ctx.beginPath();
-    ctx.arc(position.x, position.y, globals.itemSize, 0, Math.PI * 2);
-    ctx.fill();
+ //   ctx.fillStyle = color;
+ //   ctx.beginPath();
+  //  ctx.arc(position.x, position.y, globals.itemSize, 0, Math.PI * 2);
+  //  ctx.fill();
   };
 
+  var  UpdateCandidates = function() {
+	  var container = document.getElementById("candidatesContainer");
+	  var containerHTML = "Voting Results";
+	  
+	  // for every candidate
+	  for (var candidate in candidates){
+		  containerHTML += "</br><span>"+ candidate+" has "+candidates[candidate]+" vote(s)</span>"
+	  }
+	  
+	  container.innerHTML = containerHTML;
+  
+  }
+  
   var render = function() {
-    Misc.resize(canvas);
-    ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+   // Misc.resize(canvas);
+  //  ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
     players.forEach(function(player) {
       drawItem(player.position, player.color);
     });
